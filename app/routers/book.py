@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response, status
 
 from app.schemas.book import BookCreate, BookResponse, BookUpdate
-from app.schemas.members import MemberCreate, MemberResponse, MemberUpdate
 from app.storage import books, members
 
 router = APIRouter(prefix="/books", tags=["Books"])
