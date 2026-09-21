@@ -22,9 +22,21 @@ class BookBase(BaseModel):
         max_length=120
     )
 
+    Bookisbn: str = Field(
+        required=True,
+        min_length=10,
+        max_length=17
+    )
+
     published_year: int = Field(
         ge=1450,
         le=current_year
+    )
+
+    member_id: int | None = Field(
+        required=True,
+        default=None,
+        description="The ID of the member who has borrowed the book, if any"
     )
 
 class BookCreate(BookBase):
