@@ -17,7 +17,7 @@ storage for the current assignment.
 Open a terminal in the project root:
 
 ```powershell
-cd "C:\Users\GrantK-MSIASUS\Documents\School\SDEV3310 API Dev\A1-Library"
+cd "C:\path\to\A1-Library"
 ```
 
 Create and activate a virtual environment:
