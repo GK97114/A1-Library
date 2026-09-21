@@ -33,7 +33,7 @@ def list_books() -> list[BookResponse]:
     response_model=BookResponse,
     summary="Get one book by its ID",
     description="Return the book identified by the path parameter.",
-    response={404: {"description": "Book not found"}}
+    responses={404: {"description": "Book not found"}}
 )
 def get_book(book_id: int) -> BookResponse:
     """Return the book with the requested book ID."""
@@ -60,10 +60,10 @@ def create_book(book: BookCreate) -> BookResponse:
 # PUT /books/{book_id} updates an existing book by its ID
 @router.put(
     "/{book_id}",
-    reponse_model=BookResponse,
+    response_model=BookResponse,
     summary="Update an existing book",
     description="Replace all fields of an existing book.",
-    response={404: {"description": "Book not found"}},
+    responses={404: {"description": "Book not found"}},
 )
 def replace_book(
     book_id: int,

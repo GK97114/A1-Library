@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Response, status
 
 from app.schemas.members import MemberCreate, MemberResponse, MemberUpdate
-from app.schemas.book import BookCreate, BookResponse, BookUpdate
+from app.schemas.book import BookResponse
 from app.storage import books, members
 
 router = APIRouter(prefix="/members", tags=["Members"])
@@ -34,7 +34,7 @@ def list_members() -> list[MemberResponse]:
     response_model=MemberResponse,
     summary="Get one member by their ID",
     description="Return the memeber identified by the path parameter.",
-    response={404: {"description": "Member not found"}}
+    responses={404: {"description": "Member not found"}}
 )
 def get_member(member_id: int) -> MemberResponse:
     """Return the member with the requested member ID."""
@@ -64,7 +64,7 @@ def create_member(member: MemberCreate) -> MemberResponse:
     response_model=MemberResponse,
     summary="Update an existing member",
     description="Replace all fields of an existing member.",
-    response={404: {"description": "Member not found"}},
+    responses={404: {"description": "Member not found"}},
 )
 def replace_member(
     member_id: int,
@@ -109,7 +109,7 @@ def delete_member(member_id: int) -> Response:
     response_model=list[BookResponse],
     summary="List all books borrowed by a specific member",
     description="Return every book currently borrowed by the specified member.",
-    response={404: {"description": "Member not found"}},
+    responses={404: {"description": "Member not found"}},
 )
 def list_member_books(member_id: int) -> list[BookResponse]:
     """Return every book currently borrowed by the specified member."""

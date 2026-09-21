@@ -11,19 +11,16 @@ class BookBase(BaseModel):
     )
 
     title: str = Field(
-        required=True,
         min_length=1,
         max_length=200
     )
 
     BookAuthor: str = Field(
-        required=True,
         min_length=1,
         max_length=120
     )
 
     Bookisbn: str = Field(
-        required=True,
         min_length=10,
         max_length=17
     )
@@ -34,7 +31,6 @@ class BookBase(BaseModel):
     )
 
     member_id: int | None = Field(
-        required=True,
         default=None,
         description="The ID of the member who has borrowed the book, if any"
     )

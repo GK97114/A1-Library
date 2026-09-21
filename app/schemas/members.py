@@ -8,21 +8,17 @@ class MemberBase(BaseModel):
     )
 
     name: str = Field(
-        required=True,
         min_length=1,
         max_length=120
     )
 
     email: EmailStr = Field(
-        required=True,
     )
 
     memberships_id: str = Field(
-        required=True,
     )
 
     phone: str = Field(
-        required=True,
         pattern=r"^\(\d{3}\)-\d{3}-\d{4}$", #US. phone number format (###)-###-####
     )
 
