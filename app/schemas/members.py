@@ -15,7 +15,7 @@ class MemberBase(BaseModel):
     email: EmailStr = Field(
     )
 
-    memberships_id: str = Field(
+    membership_id: str = Field(
     )
 
     phone: str = Field(
