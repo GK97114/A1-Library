@@ -19,9 +19,9 @@ tags_metadata = [
 ]
 
 app = FastAPI(
-    title="Assignment 1 - Library Management System",
+    title="Assignment 2 - Library Management System",
     description="Grant Kostrzewa, SDEV3310-21",
-    version="1.0.0",
+    version="2.0.0",
     openapi_tags=tags_metadata
 )
 
