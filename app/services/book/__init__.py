@@ -1,4 +1,4 @@
-"""Book service contract and implementations."""
+"""Book service interface and implementations."""
 
 from .base import BookService
 from .database import DatabaseBookService

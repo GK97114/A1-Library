@@ -1,34 +1,30 @@
-"""Abstract base class for book services."""
+"""Abstract interface for book services."""
 
 from abc import ABC, abstractmethod
 
 from app.models.book import Book
 from app.schemas.book import BookCreate, BookUpdate
 
-class BookServiceBase(ABC):
-    """Abstract base class for book services."""
+
+class BookService(ABC):
+    """Define the operations supported by each book service implementation."""
 
     @abstractmethod
-    async def create_book(self, book_create: BookCreate) -> Book:
-        """Create a new book in the database."""
-        pass
+    def create_book(self, book_create: BookCreate) -> Book:
+        """Create and return a book."""
 
     @abstractmethod
-    async def get_book(self, book_id: int) -> Book | None:
-        """Retrieve a book by its ID from the database."""
-        pass
+    def get_book(self, book_id: int) -> Book:
+        """Return a book, or raise BookNotFoundError if it does not exist."""
 
     @abstractmethod
-    async def update_book(self, book_id: int, book_update: BookUpdate) -> Book | None:
-        """Update an existing book in the database."""
-        pass
+    def replace_book(self, book_id: int, book_update: BookUpdate) -> Book:
+        """Replace a book, or raise a domain error if it cannot be replaced."""
 
     @abstractmethod
-    async def delete_book(self, book_id: int) -> bool:
-        """Delete a book from the database."""
-        pass
+    def delete_book(self, book_id: int) -> None:
+        """Delete a book, or raise BookNotFoundError if it does not exist."""
 
     @abstractmethod
-    async def list_books(self) -> list[Book]:
-        """List all books in the database."""
-        pass
+    def list_books(self) -> list[Book]:
+        """Return all books."""

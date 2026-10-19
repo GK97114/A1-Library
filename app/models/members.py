@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-from app.models.book import Book
+
+if TYPE_CHECKING:
+    from app.models.book import Book
 
 class Member(Base):
     """Map Member objects to the members table's rows in the database."""
@@ -22,4 +26,4 @@ class Member(Base):
     phone: Mapped[str] = mapped_column(String(15), nullable=True)
 
     # Define the relationship to the Book model
-    books: Mapped[list[Book]] = relationship(back_populates="member_id")
+    books: Mapped[list["Book"]] = relationship(back_populates="member")
