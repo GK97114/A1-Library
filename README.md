@@ -80,8 +80,8 @@ Stop the development server with `Ctrl+C`.
 Book request fields:
 
 - `title`: required string, 1-200 characters
-- `BookAuthor`: required string, 1-120 characters
-- `Bookisbn`: required string, 10-17 characters
+- `author`: required string, 1-120 characters
+- `isbn`: required string, 10-17 characters, must be unique (hyphens and spaces are ignored when checking for duplicates)
 - `published_year`: required integer from 1450 through the current year
 - `member_id`: optional integer identifying the borrowing member
 
@@ -93,7 +93,7 @@ Example book request:
 	"BookAuthor": "J.R.R. Tolkien",
 	"Bookisbn": "978-0547928227",
 	"published_year": 1937,
-	"member_id": null
+	"member_id": 1
 }
 ```
 
@@ -111,8 +111,8 @@ Example book request:
 Member request fields:
 
 - `name`: required string, 1-120 characters
-- `email`: required valid email address
-- `memberships_id`: required membership identifier
+- `email`: required valid email address, must be unique (case-insensitive)
+- `membership_id`: required membership identifier, must be unique (case-insensitive)
 - `phone`: required in `(###)-###-####` format
 
 Example member request:
@@ -128,8 +128,10 @@ Example member request:
 
 Successful creates return `201 Created`. Missing or invalid fields return
 `422 Unprocessable Entity`. Requests for missing records return `404 Not
-Found`. A book or member involved in an active borrowing relationship cannot
-be deleted and returns `409 Conflict`.
+Found`, including a book request whose `member_id` does not match an existing
+member. Duplicate ISBNs, member emails, and membership IDs return `409
+Conflict`. Books can be deleted at any time. A member who still has books
+cannot be deleted and returns `409 Conflict`.
 
 ## Storage Notes
 

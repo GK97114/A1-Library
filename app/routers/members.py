@@ -17,6 +17,26 @@ def find_member(member_id: int) -> MemberResponse:
         detail=f"Member with ID {member_id} not found"
     )
 
+def ensure_member_unique(
+        email: str,
+        membership_id: str,
+        exclude_member_id: int | None = None,
+) -> None:
+    """Raise 409 if another member already uses this email or membership ID."""
+    for existing in members:
+        if existing.id == exclude_member_id:
+            continue
+        if existing.email.casefold() == email.casefold():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"A member with email {email} already exists",
+            )
+        if existing.memberships_id.casefold() == membership_id.casefold():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"A member with membership ID {membership_id} already exists",
+            )
+
 # GET /members reads the entire list collection of members.
 @router.get(
     "",
@@ -46,14 +66,17 @@ def get_member(member_id: int) -> MemberResponse:
     response_model=MemberResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add a new member",
-    description="Create a new member from the validated fields."
+    description="Create a new member from the validated fields.",
+    responses={409: {"description": "A member with this email or membership ID already exists"}},
 )
-def create_member(member: MemberCreate) -> MemberResponse:
+def create_member(payload: MemberCreate) -> MemberResponse:
     """Create a new member and add them into the in-memory collection."""
+    ensure_member_unique(payload.email, payload.memberships_id)
+
     next_member_id = max((member.id for member in members), default=0) + 1
     new_member = MemberResponse(
         id=next_member_id,
-        **member.model_dump(), # Unpack the validated fields from the request body into the new member object
+        **payload.model_dump(), # Unpack the validated fields from the request body into the new member object
     )
     members.append(new_member)
     return new_member
@@ -64,17 +87,22 @@ def create_member(member: MemberCreate) -> MemberResponse:
     response_model=MemberResponse,
     summary="Update an existing member",
     description="Replace all fields of an existing member.",
-    responses={404: {"description": "Member not found"}},
+    responses={
+        404: {"description": "Member not found"},
+        409: {"description": "A member with this email or membership ID already exists"}
+    },
 )
 def replace_member(
     member_id: int,
-    member_data: MemberUpdate,
+    payload: MemberUpdate,
 ) -> MemberResponse:
     """Replace the member with the requested member ID with the new data."""
     member = find_member(member_id)
+    ensure_member_unique(payload.email, payload.memberships_id, exclude_member_id=member_id)
+
     updated_member = MemberResponse(
         id=member_id,
-        **member_data.model_dump(),  # Unpack the validated fields from the request body into the updated member object
+        **payload.model_dump(),  # Unpack the validated fields from the request body into the updated member object
     )
     members[members.index(member)] = updated_member
     return updated_member
