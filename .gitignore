@@ -9,9 +9,13 @@ wheels/
 # Virtual environments
 .venv
 
+# Local environment variables
+.env
+
 # IDE settings
 .idea/
 *.iml
+.vscode/
 
 # Test and analysis caches
 .pytest_cache/

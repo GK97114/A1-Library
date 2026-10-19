@@ -1,8 +1,7 @@
-# Assignment 1 - Library Management System
+# Assignment 2 - Library Management System With Database
 
 A FastAPI application for managing books and library members. The API uses
-Pydantic models for request and response validation and temporary in-memory
-storage for the current assignment.
+Pydantic models for request and response validation and a PostgreSQL database for data persistence.
 
 ## Requirements
 
