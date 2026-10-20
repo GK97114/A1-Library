@@ -39,7 +39,6 @@ class DatabaseBookService(BookService):
         """Create a book after validating its member and ISBN."""
         try:
             with self._session_factory.begin() as session:
-                session.expire_on_commit = False
                 if MemberRepository(session).get_by_id(book_create.member_id) is None:
                     raise MemberNotFoundError(
                         f"Member with ID {book_create.member_id} was not found"
@@ -59,7 +58,6 @@ class DatabaseBookService(BookService):
         """Replace a book after validating its member and ISBN."""
         try:
             with self._session_factory.begin() as session:
-                session.expire_on_commit = False
                 books = BookRepository(session)
                 book = books.get_by_id(book_id)
                 if book is None:

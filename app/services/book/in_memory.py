@@ -1,5 +1,7 @@
 """In-memory implementation of the book service."""
 
+from pydantic import field_validator
+
 from app.exceptions import (
     BookNotFoundError,
     DuplicateIsbnError,
@@ -11,9 +13,10 @@ from app.schemas.book import BookCreate, BookUpdate
 from .base import BookService
 
 
-def _normalize_isbn(isbn: str) -> str:
-    """Normalize common ISBN formatting before checking for duplicates."""
-    return isbn.replace("-", "").replace(" ", "").upper()
+@field_validator("isbn")
+@classmethod
+def normalize_isbn(cls, value: str) -> str:
+    return value.replace("-", "").replace(" ", "").upper()
 
 
 class InMemoryBookService(BookService):
@@ -42,9 +45,9 @@ class InMemoryBookService(BookService):
                 raise MemberNotFoundError(
                     f"Member with ID {book_create.member_id} was not found"
                 )
-            normalized_isbn = _normalize_isbn(book_create.isbn)
+            normalized_isbn = self.normalize_isbn(book_create.isbn)
             if any(
-                _normalize_isbn(book.isbn) == normalized_isbn
+                self.normalize_isbn(book.isbn) == normalized_isbn
                 for book in self._store.books
             ):
                 raise DuplicateIsbnError(
@@ -70,10 +73,10 @@ class InMemoryBookService(BookService):
                     f"Member with ID {book_update.member_id} was not found"
                 )
 
-            normalized_isbn = _normalize_isbn(book_update.isbn)
+            normalized_isbn = self.normalize_isbn(book_update.isbn)
             if any(
                 existing.id != book_id
-                and _normalize_isbn(existing.isbn) == normalized_isbn
+                and self.normalize_isbn(existing.isbn) == normalized_isbn
                 for existing in self._store.books
             ):
                 raise DuplicateIsbnError(
