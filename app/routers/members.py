@@ -1,145 +1,90 @@
-from fastapi import APIRouter, HTTPException, Response, status
+"""HTTP endpoints for members."""
 
-from app.schemas.members import MemberCreate, MemberResponse, MemberUpdate
+from typing import Annotated
+from fastapi import APIRouter, Depends, Response, status
+
+from app.dependencies import get_member_service
+from app.models.book import Book
+from app.models.members import Member
 from app.schemas.book import BookResponse
-from app.storage import books, members
+from app.schemas.members import MemberCreate, MemberResponse, MemberUpdate
+from app.services.members import MemberService
 
 router = APIRouter(prefix="/members", tags=["Members"])
 
-def find_member(member_id: int) -> MemberResponse:
-    """Helper function to find a member by their ID."""
-    for member in members:
-        if member.id == member_id:
-            return member
+MemberServiceDep = Annotated[MemberService, Depends(get_member_service)]
 
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Member with ID {member_id} not found"
-    )
 
-def ensure_member_unique(
-        email: str,
-        membership_id: str,
-        exclude_member_id: int | None = None,
-) -> None:
-    """Raise 409 if another member already uses this email or membership ID."""
-    for existing in members:
-        if existing.id == exclude_member_id:
-            continue
-        if existing.email.casefold() == email.casefold():
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"A member with email {email} already exists",
-            )
-        if existing.memberships_id.casefold() == membership_id.casefold():
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"A member with membership ID {membership_id} already exists",
-            )
-
-# GET /members reads the entire list collection of members.
 @router.get(
     "",
     response_model=list[MemberResponse],
-    summary="List all members associated with the library.",
+    summary="List all members associated with the library",
     description="Return every member currently stored by the application.",
 )
-def list_members() -> list[MemberResponse]:
-    """Return every memeber currently stored in memory."""
-    return members
+def list_members(service: MemberServiceDep) -> list[Member]:
+    return service.list_members()
 
-# GET /members/{member_id} searches for a single member by their ID.
+
 @router.get(
     "/{member_id}",
     response_model=MemberResponse,
     summary="Get one member by their ID",
-    description="Return the memeber identified by the path parameter.",
-    responses={404: {"description": "Member not found"}}
+    description="Return the member identified by the path parameter.",
+    responses={404: {"description": "Member not found"}},
 )
-def get_member(member_id: int) -> MemberResponse:
-    """Return the member with the requested member ID."""
-    return find_member(member_id)
+def get_member(member_id: int, service: MemberServiceDep) -> Member:
+    return service.get_member(member_id)
 
-# POST /members creates a new member and adds them to the library collection.
+
 @router.post(
     "",
     response_model=MemberResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Add a new member",
-    description="Create a new member from the validated fields.",
+    description="Create a new member. The email and membership ID must be unique.",
     responses={409: {"description": "A member with this email or membership ID already exists"}},
 )
-def create_member(payload: MemberCreate) -> MemberResponse:
-    """Create a new member and add them into the in-memory collection."""
-    ensure_member_unique(payload.email, payload.memberships_id)
+def create_member(payload: MemberCreate, service: MemberServiceDep) -> Member:
+    return service.create_member(payload)
 
-    next_member_id = max((member.id for member in members), default=0) + 1
-    new_member = MemberResponse(
-        id=next_member_id,
-        **payload.model_dump(), # Unpack the validated fields from the request body into the new member object
-    )
-    members.append(new_member)
-    return new_member
 
-# PUT /members/{member_id} updates an existing member by their ID.
 @router.put(
     "/{member_id}",
     response_model=MemberResponse,
     summary="Update an existing member",
-    description="Replace all fields of an existing member.",
+    description="Replace all fields of an existing member. The email and membership ID must be unique.",
     responses={
         404: {"description": "Member not found"},
-        409: {"description": "A member with this email or membership ID already exists"}
+        409: {"description": "Another member with this email or membership ID already exists"},
     },
 )
 def replace_member(
-    member_id: int,
-    payload: MemberUpdate,
-) -> MemberResponse:
-    """Replace the member with the requested member ID with the new data."""
-    member = find_member(member_id)
-    ensure_member_unique(payload.email, payload.memberships_id, exclude_member_id=member_id)
+    member_id: int, payload: MemberUpdate, service: MemberServiceDep
+) -> Member:
+    return service.replace_member(member_id, payload)
 
-    updated_member = MemberResponse(
-        id=member_id,
-        **payload.model_dump(),  # Unpack the validated fields from the request body into the updated member object
-    )
-    members[members.index(member)] = updated_member
-    return updated_member
 
-# DELETE /members/{member_id} removes a member from the library collection.
 @router.delete(
     "/{member_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a member",
-    description="Remove a member from the library collection.",
+    description="Remove a member from the library collection. A member who still has books cannot be deleted.",
     responses={
         404: {"description": "Member not found"},
-        409: {"description": "Member cannot be deleted because they have borrowed books."}
+        409: {"description": "Member cannot be deleted because they have books"},
     },
 )
-def delete_member(member_id: int) -> Response:
-    """Delete the member with the requested member ID."""
-    member = find_member(member_id)
-
-    if any(book.member_id == member_id for book in books):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Member with ID {member_id} cannot be deleted because they have borrowed books."
-        )
-
-    members.remove(member)
+def delete_member(member_id: int, service: MemberServiceDep) -> Response:
+    service.delete_member(member_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-# GET /members/{member_id}/books retrieves all books borrowed by a specific member.
+
 @router.get(
     "/{member_id}/books",
     response_model=list[BookResponse],
-    summary="List all books borrowed by a specific member",
-    description="Return every book currently borrowed by the specified member.",
+    summary="List all books associated with a specific member",
+    description="Return every book associated with the specified member.",
     responses={404: {"description": "Member not found"}},
 )
-def list_member_books(member_id: int) -> list[BookResponse]:
-    """Return every book currently borrowed by the specified member."""
-    find_member(member_id)  # Ensure the member exists
-    return [book for book in books if book.member_id == member_id]
+def list_member_books(member_id: int, service: MemberServiceDep) -> list[Book]:
+    return service.list_member_books(member_id)

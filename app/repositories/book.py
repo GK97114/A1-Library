@@ -1,6 +1,6 @@
 """Database queries and persistence operations for books."""
 
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.orm import Session
 
 from app.models.book import Book
@@ -12,6 +12,18 @@ class BookRepository:
 
     def __init__(self, session: Session) -> None:
         self._session = session
+
+    def exists_for_member(self, member_id: int) -> bool:
+        """Return True if any book references this member."""
+        statement = select(exists().where(Book.member_id == member_id))
+        return bool(self._session.scalar(statement))
+
+    def list_by_member(self, member_id: int) -> list[Book]:
+        """Return the books associated with one member, ordered by ID."""
+        statement = (
+            select(Book).where(Book.member_id == member_id).order_by(Book.id)
+        )
+        return list(self._session.scalars(statement).all())
 
     def list_all(self) -> list[Book]:
         """Return books ordered by ID."""

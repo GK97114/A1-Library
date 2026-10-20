@@ -19,11 +19,10 @@ class Member(Base):
 
     # Define the columns in the members table
     id: Mapped[int] = mapped_column(primary_key=True)
-    first_name: Mapped[str] = mapped_column(String(50), nullable=False)
-    last_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
     email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     membership_id: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
-    phone: Mapped[str] = mapped_column(String(15), nullable=True)
+    phone: Mapped[str] = mapped_column(String(15), nullable=False)
 
     # Define the relationship to the Book model
     books: Mapped[list["Book"]] = relationship(back_populates="member")

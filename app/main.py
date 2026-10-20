@@ -2,13 +2,11 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 
 from app import models
 from app.config import Settings, StorageBackend
 from app.database.session import create_database
-from app.exceptions import ConflictError, NotFoundError
 from app.in_memory_store import InMemoryStore
 from app.models.base import Base
 from app.routers.book import router as book_router
@@ -66,15 +64,6 @@ app = FastAPI(
 
 app.include_router(book_router)
 app.include_router(members_router)
-
-@app.exception_handler(NotFoundError)
-def handle_not_found(request: Request, exc: NotFoundError) -> JSONResponse:
-    return JSONResponse(status_code=404, content={"detail": str(exc) or "Resource not found"})
-
-
-@app.exception_handler(ConflictError)
-def handle_conflict(request: Request, exc: ConflictError) -> JSONResponse:
-    return JSONResponse(status_code=409, content={"detail": str(exc) or "Conflict with existing data"})
 
 # GET / endpoint returns a simple message to indicate that the API is running
 @app.get("/", tags=["General"], summary="Introduce the API")
