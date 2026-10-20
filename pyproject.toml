@@ -1,0 +1,13 @@
+[project]
+name = "library-management-api"
+version = "2.0.0"
+description = "Library management API with selectable in-memory or PostgreSQL storage"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.116.0",
+    "pydantic-settings>=2.0.0",
+    "email-validator>=2.0.0",
+    "psycopg[binary]>=3.2.0",
+    "sqlalchemy>=2.0.0",
+]
