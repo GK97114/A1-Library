@@ -4,8 +4,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, status
 
 from app.dependencies import get_member_service
+from app.exceptions import ConflictError, MemberHasBooksError, MemberNotFoundError
 from app.models.book import Book
 from app.models.members import Member
+from app.routers.http_errors import duplicate_member, member_has_books, member_not_found
 from app.schemas.book import BookResponse
 from app.schemas.members import MemberCreate, MemberResponse, MemberUpdate
 from app.services.members import MemberService
@@ -33,7 +35,10 @@ def list_members(service: MemberServiceDep) -> list[Member]:
     responses={404: {"description": "Member not found"}},
 )
 def get_member(member_id: int, service: MemberServiceDep) -> Member:
-    return service.get_member(member_id)
+    try:
+        return service.get_member(member_id)
+    except MemberNotFoundError:
+        raise member_not_found() from None
 
 
 @router.post(
@@ -45,7 +50,10 @@ def get_member(member_id: int, service: MemberServiceDep) -> Member:
     responses={409: {"description": "A member with this email or membership ID already exists"}},
 )
 def create_member(payload: MemberCreate, service: MemberServiceDep) -> Member:
-    return service.create_member(payload)
+    try:
+        return service.create_member(payload)
+    except ConflictError:
+        raise duplicate_member() from None
 
 
 @router.put(
@@ -61,7 +69,12 @@ def create_member(payload: MemberCreate, service: MemberServiceDep) -> Member:
 def replace_member(
     member_id: int, payload: MemberUpdate, service: MemberServiceDep
 ) -> Member:
-    return service.replace_member(member_id, payload)
+    try:
+        return service.replace_member(member_id, payload)
+    except MemberNotFoundError:
+        raise member_not_found() from None
+    except ConflictError:
+        raise duplicate_member() from None
 
 
 @router.delete(
@@ -75,7 +88,12 @@ def replace_member(
     },
 )
 def delete_member(member_id: int, service: MemberServiceDep) -> Response:
-    service.delete_member(member_id)
+    try:
+        service.delete_member(member_id)
+    except MemberNotFoundError:
+        raise member_not_found() from None
+    except MemberHasBooksError:
+        raise member_has_books() from None
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -87,4 +105,7 @@ def delete_member(member_id: int, service: MemberServiceDep) -> Response:
     responses={404: {"description": "Member not found"}},
 )
 def list_member_books(member_id: int, service: MemberServiceDep) -> list[Book]:
-    return service.list_member_books(member_id)
+    try:
+        return service.list_member_books(member_id)
+    except MemberNotFoundError:
+        raise member_not_found() from None

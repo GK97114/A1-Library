@@ -5,6 +5,7 @@ class MemberBase(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         str_strip_whitespace=True,
+        from_attributes=True,
     )
 
     name: str = Field(
@@ -13,9 +14,11 @@ class MemberBase(BaseModel):
     )
 
     email: EmailStr = Field(
+        max_length=100
     )
 
     membership_id: str = Field(
+        max_length=20
     )
 
     phone: str = Field(
