@@ -14,10 +14,10 @@ Remove this section once everything is working.
 - [x] PostgreSQL in Docker (`docker-compose.yml`)
 - [x] ORM models, repositories, in-memory store
 - [x] Book service: abstract contract, in-memory and database implementations
-- [ ] Member service (contract and both implementations)
-- [ ] Database engine and session factory (`app/database/session.py`)
-- [ ] Application startup wiring (`main.py` lifespan, `dependencies.py`)
-- [ ] Routers converted from lists to services
+- [x] Member service (contract and both implementations)
+- [x] Database engine and session factory (`app/database/session.py`)
+- [x] Application startup wiring (`main.py` lifespan, `dependencies.py`)
+- [x] Routers converted from lists to services
 - [ ] Testing against both backends, including restart persistence
 
 ## Requirements
