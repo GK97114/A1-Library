@@ -5,21 +5,6 @@ response validation uses Pydantic models. Data can be stored either in
 process memory (temporary) or in a PostgreSQL database (persistent), and the
 backend is chosen with a single setting.
 
-## Project Status (checkpoint)
-
-Remove this section once everything is working.
-
-- [x] Assignment 1 feedback fixes (field names, required `member_id`, duplicate checks)
-- [x] Settings and backend selection (`config.py`)
-- [x] PostgreSQL in Docker (`docker-compose.yml`)
-- [x] ORM models, repositories, in-memory store
-- [x] Book service: abstract contract, in-memory and database implementations
-- [x] Member service (contract and both implementations)
-- [x] Database engine and session factory (`app/database/session.py`)
-- [x] Application startup wiring (`main.py` lifespan, `dependencies.py`)
-- [x] Routers converted from lists to services
-- [ ] Testing against both backends, including restart persistence
-
 ## Requirements
 
 - Python 3.11 or newer (the settings use `enum.StrEnum`)
@@ -71,11 +56,11 @@ Git and must never be committed.
 | `DATABASE_ECHO_SQL` | Optional. `true` prints every SQL statement |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Used by Docker Compose to create the database |
 
-The Docker container publishes PostgreSQL on host port `5433`, so the URL in
+The Docker container publishes PostgreSQL on host port `5434`, so the URL in
 `.env` must use that port:
 
 ```text
-DATABASE_URL=postgresql+psycopg://your_db_user:your_db_password@localhost:5433/your_db_name
+DATABASE_URL=postgresql+psycopg://your_db_user:your_db_password@localhost:5434/your_db_name
 ```
 
 If `STORAGE_BACKEND` is `database` and `DATABASE_URL` is missing, the
