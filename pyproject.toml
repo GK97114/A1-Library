@@ -11,3 +11,8 @@ dependencies = [
     "psycopg[binary]>=3.2.0",
     "sqlalchemy>=2.0.0",
 ]
+
+[dependency-groups]
+dev = [
+    "testcontainers[postgres]>=4.15.0",
+]
