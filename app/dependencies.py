@@ -2,9 +2,13 @@
 
 from fastapi import Request
 
+from app.config import Settings
 from app.services.book import BookService
 from app.services.members import MemberService
 
+def get_settings(request: Request) -> Settings:
+    """Return the validated settings created during app startup."""
+    return request.app.state.settings
 
 def get_book_service(request: Request) -> BookService:
     """Return the startup-selected Book service."""

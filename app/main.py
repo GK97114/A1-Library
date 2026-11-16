@@ -55,9 +55,9 @@ async def lifespan(application: FastAPI):
         database.engine.dispose()
 
 app = FastAPI(
-    title="Assignment 2 - Library Management System",
+    title="Assignment 3 - Library Management System",
     description="Grant Kostrzewa, SDEV3310-21",
-    version="2.0.0",
+    version="3.0.0",
     openapi_tags=tags_metadata,
     lifespan=lifespan,
 )

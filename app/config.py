@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     database_url: str | None = None
     database_echo_sql: bool = False
     storage_backend: StorageBackend = StorageBackend.DATABASE
+    # Default bearer tokens for predefined users. These should be overridden in production with secure values.
+    default_member_token: str = "member-default-token"
+    default_admin_token: str = "admin-default-token"
 
     model_config = SettingsConfigDict(
         env_file=".env",
