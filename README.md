@@ -9,7 +9,8 @@ backend is chosen with a single setting.
 
 - Python 3.11 or newer
 - [`uv`](https://docs.astral.sh/uv/) for Python project and dependency management
-- Docker Desktop, to run PostgreSQL locally
+- Docker Desktop or another Docker-compatible runtime for local PostgreSQL and
+  the Testcontainers integration tests
 
 ## Set Up the Project
 
@@ -82,6 +83,32 @@ restarting the container preserves that data. To stop the container while
 keeping its data, run `docker compose down`. To remove the database volume and
 all its data as well, run `docker compose down -v`; only do this when you
 intentionally want a fresh database.
+
+## Run the Tests
+
+The test suite uses `pytest` and is organized by responsibility:
+
+| Test group | What it covers | Requirements |
+| --- | --- | --- |
+| `tests/unit/` | Pydantic schema rules, in-memory service behavior, database-service decisions using test doubles, and auth dependencies | No PostgreSQL or Docker |
+| `tests/integration/` | SQLAlchemy repositories and API workflows, including both the in-memory and database backends | Docker running for the disposable PostgreSQL container |
+| `tests/conformance/` | The published OpenAPI authentication and security contract | No PostgreSQL or Docker |
+
+Run one group or the complete suite from the project root:
+
+```powershell
+uv run pytest tests/unit
+uv run pytest tests/integration
+uv run pytest tests/conformance
+uv run pytest
+```
+
+The repository and database-backed API integration tests use Testcontainers to
+start a disposable PostgreSQL 17.2 container. They do not connect to the
+PostgreSQL database configured for local application use or to a developer's
+Library database. The test fixtures reset the disposable database between
+tests and stop the container after the pytest session. The container image may
+need to be downloaded the first time the integration tests run.
 
 ## Run the API
 
@@ -321,6 +348,18 @@ project-root/
 │           ├── base.py         # MemberService abstraction
 │           ├── database.py     # PostgreSQL implementation
 │           └── in_memory.py    # In-memory implementation
+├── tests/
+│   ├── conftest.py             # Shared pytest and Testcontainers fixtures
+│   ├── unit/
+│   │   ├── auth-tests/         # Auth dependency unit tests
+│   │   ├── schemas/            # Book and Member validation tests
+│   │   └── services/           # In-memory and database-service unit tests
+│   ├── integration/
+│   │   ├── repositories/       # SQLAlchemy/PostgreSQL repository tests
+│   │   ├── routers/            # FastAPI workflow tests with TestClient
+│   │   └── test_api_authentication_authorization.py
+│   └── conformance/
+│       └── test_authentication_authorization.py
 ├── docker-compose.yml          # PostgreSQL container
 ├── pyproject.toml              # Project metadata and dependencies
 ├── uv.lock                     # Locked dependency versions
