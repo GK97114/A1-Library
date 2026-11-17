@@ -92,7 +92,7 @@ The test suite uses `pytest` and is organized by responsibility:
 | --- | --- | --- |
 | `tests/unit/` | Pydantic schema rules, in-memory service behavior, database-service decisions using test doubles, and auth dependencies | No PostgreSQL or Docker |
 | `tests/integration/` | SQLAlchemy repositories and API workflows, including both the in-memory and database backends | Docker running for the disposable PostgreSQL container |
-| `tests/conformance/` | The published OpenAPI authentication and security contract | No PostgreSQL or Docker |
+| `tests/conformance/` | Authentication and security, OpenAPI structure and response contracts, generated safe-operation checks with Schemathesis, and negative HTTP validation and business-rule cases | Docker is needed for business-rule cases, which run against both memory and disposable PostgreSQL; other conformance tests use memory |
 
 Run one group or the complete suite from the project root:
 
@@ -103,12 +103,39 @@ uv run pytest tests/conformance
 uv run pytest
 ```
 
-The repository and database-backed API integration tests use Testcontainers to
-start a disposable PostgreSQL 17.2 container. They do not connect to the
-PostgreSQL database configured for local application use or to a developer's
-Library database. The test fixtures reset the disposable database between
-tests and stop the container after the pytest session. The container image may
-need to be downloaded the first time the integration tests run.
+The conformance tests include:
+
+- `test_openapi_api_contract.py` validates the generated OpenAPI document and
+  checks the published Book and Member methods, schemas, statuses, and error
+  responses.
+- `test_schemathesis_api.py` generates requests for safe GET operations and
+  validates their responses against OpenAPI.
+- `test_api_negative_validation.py` checks missing or unknown fields,
+  out-of-range values, invalid path-ID types, and the documented 422 response.
+- `test_api_negative_business_rules.py` checks missing records, nonexistent
+  Member references, duplicate values, and blocked Member deletion, including
+  that failed requests leave stored data unchanged.
+- `test_authentication_authorization.py` checks authentication and role access.
+
+The repository and database-backed API integration tests, along with the
+business-rule negative tests, use Testcontainers to start a disposable
+PostgreSQL 17.2 container. They do not connect to the PostgreSQL database
+configured for local application use or to a developer's Library database.
+The test fixtures reset the disposable database between tests and stop the
+container after the pytest session. The container image may need to be
+downloaded the first time these tests run.
+
+Run an individual conformance test file with:
+
+```powershell
+uv run pytest tests/conformance/test_openapi_api_contract.py
+uv run pytest tests/conformance/test_schemathesis_api.py
+uv run pytest tests/conformance/test_api_negative_validation.py
+uv run pytest tests/conformance/test_api_negative_business_rules.py
+```
+
+The business-rule negative tests require Docker; the other commands above do
+not.
 
 ## Run the API
 
@@ -351,15 +378,26 @@ project-root/
 ├── tests/
 │   ├── conftest.py             # Shared pytest and Testcontainers fixtures
 │   ├── unit/
-│   │   ├── auth-tests/         # Auth dependency unit tests
-│   │   ├── schemas/            # Book and Member validation tests
-│   │   └── services/           # In-memory and database-service unit tests
+│   │   ├── auth-tests/
+│   │   │   └── test_dependencies.py
+│   │   ├── schemas/
+│   │   │   ├── test_book_schema.py
+│   │   │   └── test_member_schema.py
+│   │   └── services/
+│   │       ├── test_book_service.py
+│   │       └── test_member_service.py
 │   ├── integration/
-│   │   ├── repositories/       # SQLAlchemy/PostgreSQL repository tests
-│   │   ├── routers/            # FastAPI workflow tests with TestClient
+│   │   ├── repositories/
+│   │   │   └── test_repositories.py
+│   │   ├── routers/
+│   │   │   └── test_api_workflows.py
 │   │   └── test_api_authentication_authorization.py
 │   └── conformance/
-│       └── test_authentication_authorization.py
+│       ├── test_api_negative_business_rules.py
+│       ├── test_api_negative_validation.py
+│       ├── test_authentication_authorization.py
+│       ├── test_openapi_api_contract.py
+│       └── test_schemathesis_api.py
 ├── docker-compose.yml          # PostgreSQL container
 ├── pyproject.toml              # Project metadata and dependencies
 ├── uv.lock                     # Locked dependency versions
