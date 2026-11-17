@@ -1,23 +1,35 @@
-# Planned Schemathesis-generated API contract checks.
-#
-# test_schemathesis_safe_api_operations_match_openapi_contract
-#   Build the Schemathesis schema from the running app's generated OpenAPI
-#   document and run selected safe operations through the in-process ASGI app.
-#
-# Select public GET / and GET /health plus protected read-only GET operations
-# (for example GET /books, GET /members, and item/related-book reads). Exclude
-# POST, PUT, and DELETE so generated cases cannot mutate API state.
-#
-# Supply the configured admin or member bearer token for protected GET
-# operations. Confirm generated requests include authentication where required
-# and that missing/invalid authentication behavior remains covered by the
-# explicit authentication tests.
-#
-# Validate every generated response against its documented status, headers,
-# content type, and response schema. Include documented not-found and 422
-# outcomes when those are generated, but keep generated inputs bounded to the
-# selected safe operations and available TestClient/ASGI transport.
-#
-# Schemathesis is not currently listed in the project dependencies; add it as
-# a development dependency when implementing this test, then document the
-# focused and full-suite commands in README.md.
+"""Schemathesis-generated checks for safe API operations."""
+
+import pytest
+import schemathesis
+from hypothesis import HealthCheck, settings
+from schemathesis.checks import allow_header_conformance
+from starlette.testclient import TestClient
+
+from app.main import app
+
+
+@pytest.fixture
+def api_schema(memory_api_client: TestClient) -> schemathesis.schemas.BaseSchema:
+    """Load the OpenAPI schema after the in-memory app has started."""
+    return schemathesis.openapi.from_asgi("/openapi.json", app)
+
+
+schema = schemathesis.pytest.from_fixture("api_schema").include(method="GET")
+
+
+@schema.parametrize()
+@settings(
+    max_examples=5,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+def test_schemathesis_safe_api_operations_match_openapi_contract(
+    case,
+    admin_headers: dict[str, str],
+) -> None:
+    """Run generated read-only requests and validate responses against OpenAPI."""
+    case.call_and_validate(
+        headers=admin_headers,
+        excluded_checks=[allow_header_conformance],
+    )
