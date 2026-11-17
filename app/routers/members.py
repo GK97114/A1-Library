@@ -42,7 +42,7 @@ def list_members(service: MemberServiceDep, _current_user: CurrentUser) -> list[
     response_model=MemberResponse,
     summary="Get one member by their ID",
     description="Return the member identified by the path parameter.",
-    responses={404: {"description": "Member not found"}},
+    responses={**AUTHENTICATED_RESPONSES, 404: {"description": "Member not found"}},
 )
 def get_member(member_id: int, service: MemberServiceDep, _current_user: CurrentUser) -> Member:
     """Return the member from the service layer identified by the path parameter."""
