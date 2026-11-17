@@ -12,22 +12,22 @@ class UserRole(str, Enum):
     ADMIN = "admin"
 
 @dataclass(frozen=True)
-class AuthneticatedUser:
+class AuthenticatedUser:
     """Represent the identity and role established by a valid HTTP bearer token."""
 
     username: str
     role: UserRole
 
-def get_user_for_token(token: str, settings: Settings) -> AuthneticatedUser | None:
+def get_user_for_token(token: str, settings: Settings) -> AuthenticatedUser | None:
     """Map one of the predefined bearer tokens to a user identity and role."""
     member_token = get_token_for_role(UserRole.MEMBER, settings)
     admin_token = get_token_for_role(UserRole.ADMIN, settings)
 
     # Check if enviroment values are not empty and match the provided token
     if member_token and token == member_token:
-        return AuthneticatedUser(username="member", role=UserRole.MEMBER)
+        return AuthenticatedUser(username="member", role=UserRole.MEMBER)
     if admin_token and token == admin_token:
-        return AuthneticatedUser(username="admin", role=UserRole.ADMIN)
+        return AuthenticatedUser(username="admin", role=UserRole.ADMIN)
     return None
 
 def get_token_for_role(role: UserRole, settings: Settings) -> str:

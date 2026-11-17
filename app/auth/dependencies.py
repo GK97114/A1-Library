@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.config import Settings
 from app.dependencies import get_settings
-from app.auth.users import AuthneticatedUser, UserRole, get_user_for_token
+from app.auth.users import AuthenticatedUser, UserRole, get_user_for_token
 
 bearer_scheme = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
 BearerCredentials = Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)]
@@ -37,7 +37,7 @@ AppSettings = Annotated[Settings, Depends(get_settings)]
 
 def get_authenticated_user(
     credentials: BearerCredentials, settings: AppSettings
-) -> AuthneticatedUser:
+) -> AuthenticatedUser:
     """Return the user identity and role established by a valid HTTP bearer token."""
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise missing_authentication()
@@ -46,9 +46,9 @@ def get_authenticated_user(
         raise missing_authentication()
     return user
 
-CurrentUser = Annotated[AuthneticatedUser, Depends(get_authenticated_user)]
+CurrentUser = Annotated[AuthenticatedUser, Depends(get_authenticated_user)]
 
-def require_admin_user(session_user: CurrentUser) -> AuthneticatedUser:
+def require_admin_user(session_user: CurrentUser) -> AuthenticatedUser:
     """Return the user identity and role established by a valid HTTP bearer token, requiring admin privileges."""
     if session_user.role is not UserRole.ADMIN:
         raise HTTPException(
@@ -57,4 +57,4 @@ def require_admin_user(session_user: CurrentUser) -> AuthneticatedUser:
         )
     return session_user
 
-AdminUser = Annotated[AuthneticatedUser, Depends(require_admin_user)]
+AdminUser = Annotated[AuthenticatedUser, Depends(require_admin_user)]
