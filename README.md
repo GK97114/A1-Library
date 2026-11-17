@@ -1,9 +1,9 @@
-# Assignment 2 - Library Management System With Database
+# Assignment 3 - Library Management System With Authentication & Test Suite
 
 A FastAPI application for managing books and library members. Request and
 response validation uses Pydantic models. Data can be stored either in
 process memory (temporary) or in a PostgreSQL database (persistent), and the
-backend is chosen with a single setting.
+backend is chosen with a single setting. Supports authentication to protect routes and role based authorization. Also has unit, integration, conformence, and negative tests to verify behavior.
 
 ## Prerequisites
 
@@ -310,6 +310,26 @@ Example member request:
   "phone": "(555)-123-4567"
 }
 ```
+
+## Authentication and Authorization
+
+The Book and Member data endpoints use HTTP Bearer authentication. Include a
+valid role token in the `Authorization` header for each request:
+
+```text
+Authorization: Bearer <token>
+```
+
+| Endpoint access | Required credentials |
+| --- | --- |
+| `GET /` and `GET /health` | Public; no token required |
+| Book and Member `GET` endpoints, including a member's books | A valid Member or Admin token |
+| Book and Member `POST`, `PUT`, and `DELETE` endpoints | A valid Admin token |
+
+Members have read-only access. An unauthenticated request or an invalid token
+receives `401 Unauthorized`; a valid Member token used for a write operation
+receives `403 Forbidden`. FastAPI's generated documentation endpoints
+(`/docs`, `/redoc`, and `/openapi.json`) are also publicly available.
 
 ## Response Codes and Business Rules
 
