@@ -35,7 +35,7 @@ def book_payload(
     }
 
 
-def database_session_factory() -> tuple[MagicMock, MagicMock]:
+def mock_database_session_factory() -> tuple[MagicMock, MagicMock]:
     factory = MagicMock()
     session = MagicMock()
     factory.begin.return_value.__enter__.return_value = session
@@ -129,7 +129,7 @@ def test_in_memory_book_service_replaces_and_deletes_a_book() -> None:
 
 def test_database_book_service_creates_when_member_exists() -> None:
     """Verify that the database book service creates a book when the member exists."""
-    factory, session = database_session_factory()
+    factory, session = mock_database_session_factory()
     created = Book(id=7, **book_payload())
 
     with (
@@ -160,7 +160,7 @@ def test_database_book_service_rejects_missing_member_or_duplicate_isbn(
     member_exists: bool, isbn_exists: bool, error: type[Exception]
 ) -> None:
     """Verify that the database book service rejects a missing member or duplicate ISBN."""
-    factory, _ = database_session_factory()
+    factory, _ = mock_database_session_factory()
 
     with (
         patch("app.services.book.database.MemberRepository") as member_repository,
@@ -179,7 +179,7 @@ def test_database_book_service_rejects_missing_member_or_duplicate_isbn(
 
 def test_database_book_service_reports_missing_book() -> None:
     """Verify that the database book service reports a missing book."""
-    factory, _ = database_session_factory()
+    factory, _ = mock_database_session_factory()
 
     with patch("app.services.book.database.BookRepository") as book_repository:
         book_repository.return_value.get_by_id.return_value = None
@@ -189,7 +189,7 @@ def test_database_book_service_reports_missing_book() -> None:
 
 def test_database_book_service_rejects_missing_replacement_member() -> None:
     """Verify that the database book service rejects a missing replacement member."""
-    factory, _ = database_session_factory()
+    factory, _ = mock_database_session_factory()
     existing_book = Book(id=1, **book_payload())
 
     with (
@@ -207,7 +207,7 @@ def test_database_book_service_rejects_missing_replacement_member() -> None:
 
 def test_database_book_service_rejects_duplicate_isbn_from_another_book() -> None:
     """Verify that the database book service rejects a duplicate ISBN from another book."""
-    factory, _ = database_session_factory()
+    factory, _ = mock_database_session_factory()
     existing_book = Book(id=1, **book_payload())
 
     with (
@@ -228,7 +228,7 @@ def test_database_book_service_rejects_duplicate_isbn_from_another_book() -> Non
 
 def test_database_book_service_allows_replacement_to_keep_its_isbn() -> None:
     """Verify that the database book service allows a replacement to keep its ISBN."""
-    factory, session = database_session_factory()
+    factory, session = mock_database_session_factory()
     existing_book = Book(id=1, **book_payload())
 
     with (
@@ -251,7 +251,7 @@ def test_database_book_service_allows_replacement_to_keep_its_isbn() -> None:
 
 def test_database_book_service_deletes_an_existing_book() -> None:
     """Verify that the database book service can delete an existing book."""
-    factory, _ = database_session_factory()
+    factory, _ = mock_database_session_factory()
     existing_book = Book(id=1, **book_payload())
 
     with patch("app.services.book.database.BookRepository") as book_repository:

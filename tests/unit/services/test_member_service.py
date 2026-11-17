@@ -58,7 +58,7 @@ def book_record(book_id: int, member_id: int) -> Book:
     )
 
 
-def database_session_factory() -> tuple[MagicMock, MagicMock]:
+def mock_database_session_factory() -> tuple[MagicMock, MagicMock]:
     factory = MagicMock()
     session = MagicMock()
     factory.begin.return_value.__enter__.return_value = session
@@ -69,6 +69,7 @@ def database_session_factory() -> tuple[MagicMock, MagicMock]:
 
 
 def test_in_memory_member_service_creates_and_retrieves_a_member() -> None:
+    """Verify that the in-memory member service can create and retrieve a member."""
     service = InMemoryMemberService(InMemoryStore())
 
     created = service.create_member(MemberCreate(**member_payload()))
@@ -80,6 +81,7 @@ def test_in_memory_member_service_creates_and_retrieves_a_member() -> None:
 
 @pytest.mark.parametrize("operation", ["get", "replace", "delete", "list_books"])
 def test_in_memory_member_service_reports_a_missing_member(operation: str) -> None:
+    """Verify that the in-memory member service reports a missing member."""
     service = InMemoryMemberService(InMemoryStore())
 
     with pytest.raises(MemberNotFoundError):
@@ -94,6 +96,7 @@ def test_in_memory_member_service_reports_a_missing_member(operation: str) -> No
 
 
 def test_in_memory_member_service_lists_only_the_members_books() -> None:
+    """Verify that the in-memory member service lists only the books belonging to a member."""
     store = InMemoryStore(
         members=[member_record(1), member_record(2)],
         books=[book_record(1, 1), book_record(2, 2), book_record(3, 1)],
@@ -105,6 +108,7 @@ def test_in_memory_member_service_lists_only_the_members_books() -> None:
 
 
 def test_in_memory_member_service_blocks_deletion_when_books_exist() -> None:
+    """Verify that the in-memory member service blocks deletion when the member has books."""
     member = member_record()
     store = InMemoryStore(members=[member], books=[book_record(1, member.id)])
 
@@ -115,6 +119,7 @@ def test_in_memory_member_service_blocks_deletion_when_books_exist() -> None:
 
 
 def test_in_memory_member_service_deletes_a_member_without_books() -> None:
+    """Verify that the in-memory member service deletes a member without books."""
     member = member_record()
     store = InMemoryStore(members=[member])
 
@@ -147,7 +152,8 @@ def test_in_memory_member_service_rejects_duplicate_email_or_membership_id(
 
 
 def test_database_member_service_creates_when_identifiers_are_unique() -> None:
-    factory, session = database_session_factory()
+    """Verify that the database member service creates a member when identifiers are unique."""
+    factory, session = mock_database_session_factory()
     created = member_record(7)
 
     with patch(
@@ -177,7 +183,8 @@ def test_database_member_service_creates_when_identifiers_are_unique() -> None:
 def test_database_member_service_rejects_duplicate_email_or_membership_id(
     duplicate_kind: str, error: type[Exception]
 ) -> None:
-    factory, _ = database_session_factory()
+    """Verify that the database member service rejects duplicate email or membership ID."""
+    factory, _ = mock_database_session_factory()
 
     with patch(
         "app.services.members.database.MemberRepository"
@@ -202,7 +209,8 @@ def test_database_member_service_rejects_duplicate_email_or_membership_id(
 
 @pytest.mark.parametrize("operation", ["get", "replace", "delete"])
 def test_database_member_service_reports_a_missing_member(operation: str) -> None:
-    factory, _ = database_session_factory()
+    """Verify that the database member service reports a missing member."""
+    factory, _ = mock_database_session_factory()
 
     with (
         patch(
@@ -223,7 +231,8 @@ def test_database_member_service_reports_a_missing_member(operation: str) -> Non
 
 
 def test_database_member_service_lists_only_the_members_books() -> None:
-    factory, _ = database_session_factory()
+    """Verify that the database member service lists only the books belonging to a member."""
+    factory, _ = mock_database_session_factory()
     expected_books = [book_record(1, 1)]
 
     with (
@@ -244,7 +253,8 @@ def test_database_member_service_lists_only_the_members_books() -> None:
 
 
 def test_database_member_service_blocks_deletion_when_books_exist() -> None:
-    factory, _ = database_session_factory()
+    """Verify that the database member service blocks deletion when the member has books."""
+    factory, _ = mock_database_session_factory()
 
     with (
         patch(
@@ -265,7 +275,8 @@ def test_database_member_service_blocks_deletion_when_books_exist() -> None:
 
 
 def test_database_member_service_deletes_a_member_without_books() -> None:
-    factory, _ = database_session_factory()
+    """Verify that the database member service deletes a member without books."""
+    factory, _ = mock_database_session_factory()
 
     with (
         patch(
