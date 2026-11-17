@@ -1,62 +1,61 @@
-"""Unit tests for the authentication dependencies."""
+"""Unit tests for authentication and authorization dependencies."""
 
 import pytest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
 from app.auth.dependencies import get_authenticated_user, require_admin_user
-from app.auth.users import AuthenticatedUser, UserRole, get_token_for_role
+from app.auth.users import (
+    AuthenticatedUser,
+    UserRole,
+    get_token_for_role,
+    get_user_for_token,
+)
 from app.config import Settings, StorageBackend
 
-# AUTHENTICATION TESTS
 
 @pytest.mark.parametrize(
-    ("role", "username"), 
-    [(UserRole.ADMIN, "admin_user"), (UserRole.MEMBER, "member_user")],
+    ("role", "username"),
+    [(UserRole.ADMIN, "admin"), (UserRole.MEMBER, "member")],
 )
-def test_valid_default_token_authenticates_its_users_role(
-    role: UserRole,
-    username: str,
+def test_valid_default_token_maps_to_its_user_and_role(
+    role: UserRole, username: str
 ) -> None:
-    """Each configured default token shall resolve to its fixed user and role."""
+    """Verify that a valid default token maps to its corresponding user and role."""
     settings = Settings(storage_backend=StorageBackend.MEMORY)
-    user = get_authenticated_user(
-        token_credentials(get_token_for_role(role, settings)), settings
-    )
+
+    user = get_user_for_token(get_token_for_role(role, settings), settings)
+
     assert user == AuthenticatedUser(username=username, role=role)
 
-def test_get_user_for_token_returns_none_for_unknown_or_empty_token() -> None:
-    """Unknown or empty tokens should not authenticate."""
+
+@pytest.mark.parametrize("token", ["", "unknown-token"])
+def test_get_user_for_token_returns_none_for_unknown_or_empty_token(
+    token: str,
+) -> None:
+    """Verify that get_user_for_token returns None for unknown or empty tokens."""
     settings = Settings(storage_backend=StorageBackend.MEMORY)
-    user = get_authenticated_user(token_credentials(""), settings)
-    assert user is None
+
+    assert get_user_for_token(token, settings) is None
+
 
 @pytest.mark.parametrize(
-        # Create test cases for missing, unknown, and wrong scheme credentials
-        "credentials",
-        [
-            None,
-            HTTPAuthorizationCredentials(scheme="Bearer", credentials="fake_default_access_token"),
-            HTTPAuthorizationCredentials(scheme="Basic", credentials="fake_admin_token"),
-        ],
-        # Provide human-readable IDs for each test case
-        ids=["missing", "unknown-token", "wrong-scehme"],
+    "credentials",
+    [
+        None,
+        HTTPAuthorizationCredentials(
+            scheme="Bearer", credentials="unknown-token"
+        ),
+        HTTPAuthorizationCredentials(scheme="Basic", credentials="admin-default-token"),
+    ],
+    ids=["missing", "unknown-token", "wrong-scheme"],
 )
-def test_get_authenticated_user_rejects_missing_credentials_with_401(credentials: HTTPAuthorizationCredentials | None,) -> None:
-    """A missing HTTPAuthorizationCredentials value should raise HTTP 401."""
-    settings = Settings(storage_backend=StorageBackend.MEMORY)
-    with pytest.raises(HTTPException) as error:
-        get_authenticated_user(credentials, settings)
-    
-    assert error.value.status_code == 401
-    assert error.value.detail == "Missing or invalid authentication credentials"
-    assert error.value.headers == {"WWW-Authenticate": "Bearer"}
-
-def test_get_authenticated_user_rejects_wrong_scheme_or_token_with_401(
-    credentials: HTTPAuthorizationCredentials,
+def test_get_authenticated_user_rejects_missing_or_invalid_credentials(
+    credentials: HTTPAuthorizationCredentials | None,
 ) -> None:
-    """Non-Bearer schemes and unknown bearer tokens should raise HTTP 401."""
+    """Verify that get_authenticated_user rejects missing or invalid credentials."""
     settings = Settings(storage_backend=StorageBackend.MEMORY)
+
     with pytest.raises(HTTPException) as error:
         get_authenticated_user(credentials, settings)
 
@@ -64,23 +63,28 @@ def test_get_authenticated_user_rejects_wrong_scheme_or_token_with_401(
     assert error.value.detail == "Missing or invalid authentication credentials"
     assert error.value.headers == {"WWW-Authenticate": "Bearer"}
 
-# AUTHORIZATION TESTS
 
-def test_require_admin_user_allows_admin_and_rejects_member() -> None:
-    """A valid member identity receives HTTP 403 when accessing admin-only endpoints."""
-    member_user = AuthenticatedUser(username="member", role=UserRole.MEMBER)
+def test_require_admin_user_allows_admin() -> None:
+    """Verify that require_admin_user allows an admin user."""
+    admin = AuthenticatedUser(username="admin", role=UserRole.ADMIN)
+
+    assert require_admin_user(admin) is admin
+
+
+def test_require_admin_user_rejects_member() -> None:
+    """Verify that require_admin_user rejects a member user."""
+    member = AuthenticatedUser(username="member", role=UserRole.MEMBER)
 
     with pytest.raises(HTTPException) as error:
-        require_admin_user(member_user)
+        require_admin_user(member)
 
     assert error.value.status_code == 403
     assert error.value.detail == "Insufficient permissions for this endpoint"
 
-# Helpers
 
 def token_credentials(
-        token: str,
-        scheme: str = "Bearer",
+    token: str,
+    scheme: str = "Bearer",
 ) -> HTTPAuthorizationCredentials:
-    """Build the HTTPAuthorizationCredentials object that FastAPI's security dependencies expect."""
+    """Build the HTTP credentials expected by the authentication dependency."""
     return HTTPAuthorizationCredentials(scheme=scheme, credentials=token)
