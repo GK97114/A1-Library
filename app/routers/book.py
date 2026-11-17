@@ -18,6 +18,7 @@ from app.routers.http_errors import book_not_found, duplicate_isbn, member_not_f
 from app.dependencies import get_book_service
 from app.models.book import Book
 from app.schemas.book import BookCreate, BookResponse, BookUpdate
+from app.schemas.errors import ErrorResponse
 from app.services.book import BookService
 
 router = APIRouter(prefix="/books", tags=["Books"])
@@ -42,7 +43,10 @@ def list_books(service: BookServiceDep, _current_user: CurrentUser) -> list[Book
     response_model=BookResponse,
     summary="Get one book by its ID",
     description="Return the book identified by the path parameter.",
-    responses={**AUTHENTICATED_RESPONSES, 404: {"description": "Book not found"}},
+    responses={
+        **AUTHENTICATED_RESPONSES,
+        404: {"model": ErrorResponse, "description": "Book not found"},
+    },
 )
 def get_book(book_id: int, service: BookServiceDep, _current_user: CurrentUser) -> Book:
     """Return the book from the service layer identified by the path parameter."""
@@ -60,8 +64,11 @@ def get_book(book_id: int, service: BookServiceDep, _current_user: CurrentUser) 
     description="Create a new book. The member_id must identify an existing member and the ISBN must be unique.",
     responses={
         **ADMIN_RESPONSES,
-        404: {"description": "Member not found"},
-        409: {"description": "A book with this ISBN already exists"},
+        404: {"model": ErrorResponse, "description": "Member not found"},
+        409: {
+            "model": ErrorResponse,
+            "description": "A book with this ISBN already exists",
+        },
     },
 )
 def create_book(payload: BookCreate, service: BookServiceDep, _admin_user: AdminUser) -> Book:
@@ -81,8 +88,11 @@ def create_book(payload: BookCreate, service: BookServiceDep, _admin_user: Admin
     description="Replace all fields of an existing book. The member_id must identify an existing member and the ISBN must be unique.",
     responses={
         **ADMIN_RESPONSES,
-        404: {"description": "Book or member not found"},
-        409: {"description": "Another book with this ISBN already exists"},
+        404: {"model": ErrorResponse, "description": "Book or member not found"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Another book with this ISBN already exists",
+        },
     },
 )
 def replace_book(book_id: int, payload: BookUpdate, service: BookServiceDep, _admin_user: AdminUser) -> Book:
@@ -102,7 +112,10 @@ def replace_book(book_id: int, payload: BookUpdate, service: BookServiceDep, _ad
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a book",
     description="Remove a book from the library collection, whether or not it is associated with a member.",
-    responses={**ADMIN_RESPONSES, 404: {"description": "Book not found"}},
+    responses={
+        **ADMIN_RESPONSES,
+        404: {"model": ErrorResponse, "description": "Book not found"},
+    },
 )
 def delete_book(book_id: int, service: BookServiceDep, _admin_user: AdminUser) -> Response:
     try:

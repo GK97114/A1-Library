@@ -16,6 +16,7 @@ from app.models.book import Book
 from app.models.members import Member
 from app.routers.http_errors import duplicate_member, member_has_books, member_not_found
 from app.schemas.book import BookResponse
+from app.schemas.errors import ErrorResponse
 from app.schemas.members import MemberCreate, MemberResponse, MemberUpdate
 from app.services.members import MemberService
 
@@ -42,7 +43,10 @@ def list_members(service: MemberServiceDep, _current_user: CurrentUser) -> list[
     response_model=MemberResponse,
     summary="Get one member by their ID",
     description="Return the member identified by the path parameter.",
-    responses={**AUTHENTICATED_RESPONSES, 404: {"description": "Member not found"}},
+    responses={
+        **AUTHENTICATED_RESPONSES,
+        404: {"model": ErrorResponse, "description": "Member not found"},
+    },
 )
 def get_member(member_id: int, service: MemberServiceDep, _current_user: CurrentUser) -> Member:
     """Return the member from the service layer identified by the path parameter."""
@@ -58,7 +62,13 @@ def get_member(member_id: int, service: MemberServiceDep, _current_user: Current
     status_code=status.HTTP_201_CREATED,
     summary="Add a new member",
     description="Create a new member. The email and membership ID must be unique.",
-    responses={**ADMIN_RESPONSES, 409: {"description": "A member with this email or membership ID already exists"}},
+    responses={
+            **ADMIN_RESPONSES,
+            409: {
+                "model": ErrorResponse,
+                "description": "A member with this email or membership ID already exists",
+            },
+        },
 )
 def create_member(payload: MemberCreate, service: MemberServiceDep, _admin_user: AdminUser) -> Member:
     """Create a new member in the service layer."""
@@ -75,8 +85,11 @@ def create_member(payload: MemberCreate, service: MemberServiceDep, _admin_user:
     description="Replace all fields of an existing member. The email and membership ID must be unique.",
     responses={
         **ADMIN_RESPONSES,
-        404: {"description": "Member not found"},
-        409: {"description": "Another member with this email or membership ID already exists"},
+        404: {"model": ErrorResponse, "description": "Member not found"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Another member with this email or membership ID already exists",
+        },
     },
 )
 def replace_member(
@@ -98,8 +111,11 @@ def replace_member(
     description="Remove a member from the library collection. A member who still has books cannot be deleted.",
     responses={
         **ADMIN_RESPONSES,
-        404: {"description": "Member not found"},
-        409: {"description": "Member cannot be deleted because they have books"},
+        404: {"model": ErrorResponse, "description": "Member not found"},
+        409: {
+            "model": ErrorResponse,
+            "description": "Member cannot be deleted because they have books",
+        },
     },
 )
 def delete_member(member_id: int, service: MemberServiceDep, _admin_user: AdminUser) -> Response:
@@ -118,7 +134,10 @@ def delete_member(member_id: int, service: MemberServiceDep, _admin_user: AdminU
     response_model=list[BookResponse],
     summary="List all books associated with a specific member",
     description="Return every book associated with the specified member.",
-    responses={**AUTHENTICATED_RESPONSES,404: {"description": "Member not found"}},
+    responses={
+            **AUTHENTICATED_RESPONSES,
+            404: {"model": ErrorResponse, "description": "Member not found"},
+        },
 )
 def list_member_books(member_id: int, service: MemberServiceDep, _current_user: CurrentUser) -> list[Book]:
     """Return every book associated with the member ID from the service layer."""
